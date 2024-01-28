@@ -27,6 +27,10 @@ class Workflow:
         """
         Performs and exploratory data analysis. Returns the results directly into the interactive console.
         """
+        # Dataset Shape
+        print('Data Shape:')
+        display(self.dataframe.shape)
+        
         # General information for the dataset
         print('General information:')
         self.dataframe.info()
@@ -51,7 +55,7 @@ class Workflow:
             n_graphs = len(numericals.columns)
             size = n_graphs*2
             # Plot correlation matrix
-            corr_data = self.dataframe.corr()
+            corr_data = numericals.corr()
             fig, ax = plt.subplots(figsize=(size, size))
             im = ax.imshow(corr_data, vmin=-1, vmax=1)
             # Show all ticks and label them with the respective list entries
@@ -60,28 +64,44 @@ class Workflow:
             # Rotate the tick labels and set their alignment.
             plt.setp(ax.get_xticklabels(), rotation=45, ha='right',
                     rotation_mode='anchor')
+            high_correlation = []
             # Loop over data dimensions and create text annotations.
             for i in range(len(corr_data.columns)):
                 for j in range(len(corr_data.columns)):
-                    ax.text(j, i, round(corr_data.iloc[i, j], 2), ha='center', va='center', color='w')
+                    corr = round(corr_data.iloc[i, j], 2)
+                    ax.text(j, i, corr, ha='center', va='center', color='w')
+                    if abs(corr) >= 0.75 and i != j:
+                        if [corr_data.columns[i], corr_data.columns[j]] not in high_correlation:
+                            if [corr_data.columns[j], corr_data.columns[i]] not in high_correlation:
+                                high_correlation.append([corr_data.columns[i], corr_data.columns[j]])
             ax.set_title('Correlation Matrix', fontsize=20)
             fig.tight_layout()
             # Create colorbar
             ax.figure.colorbar(im, ax=ax, location='bottom', label='Correlation', shrink=0.7)
 
+            if high_correlation:
+                # Plot scatter of highly correlated variables
+                fig2, ax2 = plt.subplots(nrows=len(high_correlation), ncols=1, figsize=(6, 4*len(high_correlation)), constrained_layout=True)
+                for i, corr_pair in enumerate(high_correlation):
+                    ax2[i].scatter(numericals[corr_pair[0]], numericals[corr_pair[1]], c='blue')
+                    ax2[i].set_xlabel(corr_pair[0])
+                    ax2[i].set_ylabel(corr_pair[1]) 
+
+                fig2.suptitle('Highly Correlated Variables')
+
             # Plot distribution histograms
-            fig2, ax2 = plt.subplots(nrows=n_graphs, ncols=1, figsize=(6, 3*n_graphs), constrained_layout=True)
+            fig3, ax3 = plt.subplots(nrows=n_graphs, ncols=1, figsize=(8, 3*n_graphs), constrained_layout=True)
             colors = plt.rcParams["axes.prop_cycle"]()
             for i, column_name in enumerate(numericals):
                 c = next(colors)["color"] # Iterate colors
-                ax2[i].hist(numericals[column_name], bins=30, color=c) # Draw histogram
+                ax3[i].hist(numericals[column_name], bins=30, color=c) # Draw histogram
                 m = numericals[column_name].mean() # Calculate mean
-                ax2[i].axvline(x=m, color='red', linestyle='--', linewidth=2, label='Avg') # Draw mean line
-                ax2[i].text(x=m, y=ax2[i].get_ylim()[1]*0.95, s=round(m, 2), color='red', ha='left') # Place text with mean value close to mean line
-                ax2[i].set_ylabel('Frequency') 
-                ax2[i].set_xlabel(column_name)
+                ax3[i].axvline(x=m, color='red', linestyle='--', linewidth=2, label='Avg') # Draw mean line
+                ax3[i].text(x=m, y=ax3[i].get_ylim()[1]*0.95, s='Mean: '+str(round(m, 2)), color='red', ha='left') # Place text with mean value close to mean line
+                ax3[i].set_xlabel(column_name)
+                ax3[i].set_ylabel('Frequency') 
 
-            fig2.suptitle('Numeric Variable Distributions')
+            fig3.suptitle('Numeric Variable Distributions')
 
         if not categoricals.empty:
             categoricals.plot(subplots=True, figsize=(15,len(numericals.columns)*3), kind='bar')
@@ -98,7 +118,7 @@ class Workflow:
         
     def get_X_and_y(self):
         """
-        Return dependend (X) and target (y) variables.
+        Return dependent (X) and target (y) variables.
         """
         self.dataframe.drop_duplicates(inplace=True) # Remove duplicates
         X = self.dataframe.drop(columns=[self.target_name])
@@ -196,4 +216,4 @@ class Workflow:
             print('Recall:', recall_score(y_test, y_pred))
             print('F1 score:', f1_score(y_test, y_pred))
         else:
-            print('Couldnt identify a proper evaluation method')
+            print('Couldn\'t identify a proper evaluation method')
