@@ -43,51 +43,58 @@ class Workflow:
         print('\nNull Values:')
         display(self.dataframe.isnull().sum())
 
-        # Plot correlation matrix
-        corr_data = self.dataframe.corr()
-        fig, ax = plt.subplots(figsize=(15,15))
-        im = ax.imshow(corr_data, vmin=-1, vmax=1)
-
-        # Show all ticks and label them with the respective list entries
-        ax.set_xticks(np.arange(len(corr_data.columns)), labels=corr_data.columns)
-        ax.set_yticks(np.arange(len(corr_data.columns)), labels=corr_data.columns)
-
-        # Rotate the tick labels and set their alignment.
-        plt.setp(ax.get_xticklabels(), rotation=45, ha='right',
-                rotation_mode='anchor')
-
-        # Loop over data dimensions and create text annotations.
-        for i in range(len(corr_data.columns)):
-            for j in range(len(corr_data.columns)):
-                ax.text(j, i, round(corr_data.iloc[i][j], 2), ha='center', va='center', color='w')
-
-        ax.set_title('Correlation Matrix', fontsize=20)
-        fig.tight_layout()
-
-        # Create colorbar
-        ax.figure.colorbar(im, ax=ax, location='bottom', label='Correlation', shrink=0.7)
-
-        # Create distribution plots depending on the type of variable
+        # Create plots depending on the type of variable
         numericals = self.dataframe.select_dtypes(exclude='object')
         categoricals = self.dataframe.select_dtypes(include='object')
-        n_graphs = len(numericals.columns)
-        plt.show()
+
         if not numericals.empty:
-            fig2, ax2 = plt.subplots(nrows=n_graphs, ncols=1, sharex=False, sharey=False, figsize=(15, 3*n_graphs))
-            hist = numericals.plot(ax=ax2, subplots=True, kind='hist', bins=30)
-            plt.show()
-        
+            n_graphs = len(numericals.columns)
+            size = n_graphs*2
+            # Plot correlation matrix
+            corr_data = self.dataframe.corr()
+            fig, ax = plt.subplots(figsize=(size, size))
+            im = ax.imshow(corr_data, vmin=-1, vmax=1)
+            # Show all ticks and label them with the respective list entries
+            ax.set_xticks(np.arange(len(corr_data.columns)), labels=corr_data.columns)
+            ax.set_yticks(np.arange(len(corr_data.columns)), labels=corr_data.columns)
+            # Rotate the tick labels and set their alignment.
+            plt.setp(ax.get_xticklabels(), rotation=45, ha='right',
+                    rotation_mode='anchor')
+            # Loop over data dimensions and create text annotations.
+            for i in range(len(corr_data.columns)):
+                for j in range(len(corr_data.columns)):
+                    ax.text(j, i, round(corr_data.iloc[i, j], 2), ha='center', va='center', color='w')
+            ax.set_title('Correlation Matrix', fontsize=20)
+            fig.tight_layout()
+            # Create colorbar
+            ax.figure.colorbar(im, ax=ax, location='bottom', label='Correlation', shrink=0.7)
+
+            # Plot distribution histograms
+            fig2, ax2 = plt.subplots(nrows=n_graphs, ncols=1, figsize=(6, 3*n_graphs), constrained_layout=True)
+            colors = plt.rcParams["axes.prop_cycle"]()
+            for i, column_name in enumerate(numericals):
+                c = next(colors)["color"] # Iterate colors
+                ax2[i].hist(numericals[column_name], bins=30, color=c) # Draw histogram
+                m = numericals[column_name].mean() # Calculate mean
+                ax2[i].axvline(x=m, color='red', linestyle='--', linewidth=2, label='Avg') # Draw mean line
+                ax2[i].text(x=m, y=ax2[i].get_ylim()[1]*0.95, s=round(m, 2), color='red', ha='left') # Place text with mean value close to mean line
+                ax2[i].set_ylabel('Frequency') 
+                ax2[i].set_xlabel(column_name)
+
+            fig2.suptitle('Numeric Variable Distributions')
+
         if not categoricals.empty:
             categoricals.plot(subplots=True, figsize=(15,len(numericals.columns)*3), kind='bar')
-            plt.show()
+
+        plt.show()
 
         print('\nTarget Variable Distribution:')
         y = self.dataframe[self.target_name]
 
         if y.dtype == 'object':
-            y.value_counts().plot.bar()
+            y.value_counts().plot.bar(title=self.target_name)
         else:
-            y.plot.hist()
+            y.plot.hist(title=self.target_name)
         
     def get_X_and_y(self):
         """
