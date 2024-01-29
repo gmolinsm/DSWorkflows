@@ -69,7 +69,7 @@ class Workflow:
             for i in range(len(corr_data.columns)):
                 for j in range(len(corr_data.columns)):
                     corr = round(corr_data.iloc[i, j], 2)
-                    ax.text(j, i, corr, ha='center', va='center', color='w')
+                    ax.text(j, i, corr, ha='center', va='center', color='w', fontsize=14)
                     if abs(corr) >= 0.75 and i != j:
                         if [corr_data.columns[i], corr_data.columns[j]] not in high_correlation:
                             if [corr_data.columns[j], corr_data.columns[i]] not in high_correlation:
@@ -104,17 +104,11 @@ class Workflow:
             fig3.suptitle('Numeric Variable Distributions')
 
         if not categoricals.empty:
-            categoricals.plot(subplots=True, figsize=(15,len(numericals.columns)*3), kind='bar')
+            fig4, ax4 = plt.subplots(nrows=len(categoricals.columns), ncols=1, figsize=(6, 4*len(categoricals.columns)), constrained_layout=True)
+            for i, ax in enumerate(ax4):
+                categoricals[categoricals.columns[i]].value_counts().iloc[:10].plot.barh(ax=ax, x=categoricals.columns[i], y='Count', rot=0, title='Categorical Variable Distributions')
 
         plt.show()
-
-        print('\nTarget Variable Distribution:')
-        y = self.dataframe[self.target_name]
-
-        if y.dtype == 'object':
-            y.value_counts().plot.bar(title=self.target_name)
-        else:
-            y.plot.hist(title=self.target_name)
         
     def get_X_and_y(self):
         """
