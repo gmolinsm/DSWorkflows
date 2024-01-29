@@ -51,9 +51,12 @@ class Workflow:
         numericals = self.dataframe.select_dtypes(exclude='object')
         categoricals = self.dataframe.select_dtypes(include='object')
 
+        # Define color scheme
+        colors = plt.rcParams["axes.prop_cycle"]()
+        
         if not numericals.empty:
             n_graphs = len(numericals.columns)
-            size = n_graphs*2
+            size = n_graphs*1
             # Plot correlation matrix
             corr_data = numericals.corr()
             fig, ax = plt.subplots(figsize=(size, size))
@@ -62,8 +65,8 @@ class Workflow:
             ax.set_xticks(np.arange(len(corr_data.columns)), labels=corr_data.columns)
             ax.set_yticks(np.arange(len(corr_data.columns)), labels=corr_data.columns)
             # Rotate the tick labels and set their alignment.
-            plt.setp(ax.get_xticklabels(), rotation=45, ha='right',
-                    rotation_mode='anchor')
+            plt.setp(ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor', fontsize=14)
+            plt.setp(ax.get_yticklabels(), fontsize=14)
             high_correlation = []
             # Loop over data dimensions and create text annotations.
             for i in range(len(corr_data.columns)):
@@ -83,7 +86,7 @@ class Workflow:
                 # Plot scatter of highly correlated variables
                 fig2, ax2 = plt.subplots(nrows=len(high_correlation), ncols=1, figsize=(6, 4*len(high_correlation)), constrained_layout=True)
                 for i, corr_pair in enumerate(high_correlation):
-                    ax2[i].scatter(numericals[corr_pair[0]], numericals[corr_pair[1]], c='blue')
+                    ax2[i].scatter(numericals[corr_pair[0]], numericals[corr_pair[1]], c=next(colors)["color"])
                     ax2[i].set_xlabel(corr_pair[0])
                     ax2[i].set_ylabel(corr_pair[1]) 
 
@@ -91,32 +94,37 @@ class Workflow:
 
             # Plot distribution histograms
             fig3, ax3 = plt.subplots(nrows=n_graphs, ncols=1, figsize=(8, 3*n_graphs), constrained_layout=True)
-            colors = plt.rcParams["axes.prop_cycle"]()
+            
             for i, column_name in enumerate(numericals):
-                c = next(colors)["color"] # Iterate colors
-                ax3[i].hist(numericals[column_name], bins=30, color=c) # Draw histogram
+                ax3[i].hist(numericals[column_name], bins=30, color=next(colors)["color"]) # Draw histogram
                 m = numericals[column_name].mean() # Calculate mean
                 ax3[i].axvline(x=m, color='red', linestyle='--', linewidth=2, label='Avg') # Draw mean line
                 ax3[i].text(x=m, y=ax3[i].get_ylim()[1]*0.95, s='Mean: '+str(round(m, 2)), color='red', ha='left') # Place text with mean value close to mean line
                 ax3[i].set_xlabel(column_name)
-                ax3[i].set_ylabel('Frequency') 
+                ax3[i].set_ylabel('Frequency')
 
             fig3.suptitle('Numeric Variable Distributions')
 
         if not categoricals.empty:
             fig4, ax4 = plt.subplots(nrows=len(categoricals.columns), ncols=1, figsize=(6, 4*len(categoricals.columns)), constrained_layout=True)
             for i, ax in enumerate(ax4):
-                categoricals[categoricals.columns[i]].value_counts().iloc[:10].plot.barh(ax=ax, x=categoricals.columns[i], y='Count', rot=0, title='Categorical Variable Distributions')
+                # Plot barchart from Pandas with top 10 highest categories
+                categoricals[categoricals.columns[i]].value_counts().iloc[:10].plot.barh(ax=ax, x=categoricals.columns[i], y='Count', rot=0, color=next(colors)["color"])
+
+            fig4.suptitle('Categorical Variable Distributions')
 
         plt.show()
         
-    def get_X_and_y(self):
+    def get_X_and_y(self, remove_duplicates=False):
         """
-        Return dependent (X) and target (y) variables.
+        Return dependent (X) and target (y).
         """
-        self.dataframe.drop_duplicates(inplace=True) # Remove duplicates
-        X = self.dataframe.drop(columns=[self.target_name])
-        y = self.dataframe[self.target_name]
+        if remove_duplicates:
+            df = self.dataframe.drop_duplicates() # Remove duplicates
+        else:
+            df = self.dataframe
+        X = df.drop(columns=[self.target_name])
+        y = df[self.target_name]
         return X, y
     
     def undersample_data(self, X, y):
