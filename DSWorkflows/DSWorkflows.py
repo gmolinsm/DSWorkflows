@@ -111,7 +111,7 @@ class Workflow:
                 # Plot barchart from Pandas with top 10 highest categories
                 categoricals[categoricals.columns[i]].value_counts().iloc[:10].plot.barh(ax=ax, x=categoricals.columns[i], y='Count', rot=0, color=next(colors)["color"])
 
-            fig4.suptitle('Categorical Variable Distributions')
+            fig4.suptitle('Categorical Variable Distributions (Top 10)')
 
         plt.show()
         
@@ -142,7 +142,7 @@ class Workflow:
         return rus.fit_resample(X, y)
     
 
-    def evaluate(self, pipelines: list, X, y, test_type: str):
+    def evaluate(self, pipelines: list, X, y, test_type: str, n_splits: int = 5):
         """
         This function receives the pipelines to be crossvalidated, takes the one with the highest score and applies the appropiate evaluation method
         """
@@ -189,7 +189,7 @@ class Workflow:
         highscore = [None, 0.00, 0]
 
         for i, pipeline in enumerate(pipelines):
-            scores = cross_val_score(pipeline, X, y, scoring=test_type, cv=5)
+            scores = cross_val_score(pipeline, X_train, y_train, scoring=test_type, cv=n_splits)
             mean = np.mean(scores)
             print(f'Pipeline {i}:', scores, f'Mean score: {mean}')
 
@@ -208,14 +208,22 @@ class Workflow:
             print('MAPE:', mean_absolute_percentage_error(y_test, y_pred))
             print('MAE:', mean_absolute_error(y_test, y_pred))
         elif test_type in classification:
+            labels = len(pd.Series(y).unique())
             print(f'\nPrinting results for pipeline {highscore[2]}:')
             cm = confusion_matrix(y_test, y_pred)
-            disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[0].classes_)
-            disp.plot()
+            disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+            fig, ax = plt.subplots(figsize=(labels*1,labels*1))
+            disp.plot(ax=ax)
+
+            multiclass = labels > 2
+            if multiclass:
+                avg = 'weighted'
+            else:
+                avg = 'binary'
 
             print('Accuracy:', accuracy_score(y_test, y_pred))
-            print('Precission:', precision_score(y_test, y_pred)) 
-            print('Recall:', recall_score(y_test, y_pred))
-            print('F1 score:', f1_score(y_test, y_pred))
+            print('Precission:', precision_score(y_test, y_pred, average=avg)) 
+            print('Recall:', recall_score(y_test, y_pred, average=avg))
+            print('F1 score:', f1_score(y_test, y_pred, average=avg))
         else:
             print('Couldn\'t identify a proper evaluation method')
