@@ -142,7 +142,7 @@ class Workflow:
         return rus.fit_resample(X, y)
     
 
-    def evaluate(self, pipelines: list, X, y, test_type: str, n_splits: int = 5):
+    def evaluate(self, pipelines: list, X, y, test_type: str, n_splits: int = 5, multiclass_avg: str = 'weighted'):
         """
         This function receives the pipelines to be crossvalidated, takes the one with the highest score and applies the appropiate evaluation method
         """
@@ -189,9 +189,9 @@ class Workflow:
         highscore = [None, 0.00, 0]
 
         for i, pipeline in enumerate(pipelines):
-            scores = cross_val_score(pipeline, X_train, y_train, scoring=test_type, cv=n_splits)
+            scores = cross_val_score(pipeline, X_train, y_train, scoring=test_type, cv=n_splits, n_jobs=-1)
             mean = np.mean(scores)
-            print(f'Pipeline {i}:', scores, f'Mean score: {mean}')
+            print(f'Pipeline {i}:', scores, f'Mean score: {mean} +/- {np.std(scores)}')
 
             if mean > highscore[1]:
                 highscore[0] = pipeline
@@ -215,15 +215,12 @@ class Workflow:
             fig, ax = plt.subplots(figsize=(labels*1,labels*1))
             disp.plot(ax=ax)
 
-            multiclass = labels > 2
-            if multiclass:
-                avg = 'weighted'
-            else:
-                avg = 'binary'
+            if labels <= 2:
+                multiclass_avg = 'binary'
 
             print('Accuracy:', accuracy_score(y_test, y_pred))
-            print('Precission:', precision_score(y_test, y_pred, average=avg)) 
-            print('Recall:', recall_score(y_test, y_pred, average=avg))
-            print('F1 score:', f1_score(y_test, y_pred, average=avg))
+            print('Precission:', precision_score(y_test, y_pred, average=multiclass_avg)) 
+            print('Recall:', recall_score(y_test, y_pred, average=multiclass_avg))
+            print('F1 score:', f1_score(y_test, y_pred, average=multiclass_avg))
         else:
             print('Couldn\'t identify a proper evaluation method')
