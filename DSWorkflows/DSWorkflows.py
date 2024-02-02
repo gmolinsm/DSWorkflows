@@ -15,8 +15,9 @@ class Workflow:
     ## Parameters
         dataframe: Model data in Pandas format.
         target_name: Name for the target variable.
+        seed: Numeric value for reproducibility. (Default: 100)
     """
-    def __init__(self, dataframe: pd.DataFrame, target_name: str, seed = 100):
+    def __init__(self, dataframe: pd.DataFrame, target_name: str, seed: int = 100):
         if not isinstance(dataframe, pd.DataFrame):
             raise ValueError('Input must be a Pandas DataFrame')
         self.dataframe = dataframe
@@ -117,7 +118,10 @@ class Workflow:
         
     def get_X_and_y(self, remove_duplicates=False):
         """
-        Return dependent (X) and target (y).
+        Return model features (X) and target variable (y).
+
+        ## Parameters
+            remove_duplicates: Return values with duplicates removed. (Default: False)
         """
         if remove_duplicates:
             df = self.dataframe.drop_duplicates() # Remove duplicates
@@ -140,11 +144,18 @@ class Workflow:
         """
         rus = RandomOverSampler(random_state=self.seed)
         return rus.fit_resample(X, y)
-    
 
-    def evaluate(self, pipelines: list, X, y, test_type: str, n_splits: int = 5, multiclass_avg: str = 'weighted'):
+    def evaluate(self, pipelines: list, X, y, test_type: str, n_splits: int = 5, multiclass_avg: str = 'binary'):
         """
         This function receives the pipelines to be crossvalidated, takes the one with the highest score and applies the appropiate evaluation method
+
+        ## Parameters
+            pipelines: Model pipelines to be evaluated.
+            X: Model features.
+            y: Target variable.
+            test_type: Evaluation method for crossvalidation.
+            n_splits: Number of splits for crossvalidation. (Default: 5)
+            multiclass_avg: Calculation method for classification metrics. Set to 'micro', 'macro', 'samples', 'weighted' or None in multilabel and 'binary' for binary classification. (Default: binary)
         """
         classification = [
             'accuracy',
@@ -188,19 +199,22 @@ class Workflow:
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = self.seed)
         highscore = [None, 0.00, 0]
 
+        # Calculate mean and standard deviation for all pipelines and select the best one
         for i, pipeline in enumerate(pipelines):
             scores = cross_val_score(pipeline, X_train, y_train, scoring=test_type, cv=n_splits, n_jobs=-1)
             mean = np.mean(scores)
-            print(f'Pipeline {i}:', scores, f'Mean score: {mean} +/- {np.std(scores)}')
+            print(f'Pipeline {i}:', scores, f'Mean score: {mean} +/- {np.std(scores)} stdev')
 
             if mean > highscore[1]:
                 highscore[0] = pipeline
                 highscore[1] = mean
                 highscore[2] = i
         
+        self.pipeline = highscore[0]
         highscore[0].fit(X_train, y_train)
         y_pred = highscore[0].predict(X_test)
 
+        # Determine what type of problem is being solved and print appropiate metrics
         if test_type in regression:
             print(f'\nPrinting results for pipeline {highscore[2]}:')
             print('MSE:', mean_squared_error(y_test, y_pred))
@@ -214,9 +228,6 @@ class Workflow:
             disp = ConfusionMatrixDisplay(confusion_matrix=cm)
             fig, ax = plt.subplots(figsize=(labels*1,labels*1))
             disp.plot(ax=ax)
-
-            if labels <= 2:
-                multiclass_avg = 'binary'
 
             print('Accuracy:', accuracy_score(y_test, y_pred))
             print('Precission:', precision_score(y_test, y_pred, average=multiclass_avg)) 
