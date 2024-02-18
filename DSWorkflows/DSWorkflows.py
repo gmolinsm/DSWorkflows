@@ -59,10 +59,9 @@ class Workflow:
         
         if not numericals.empty:
             n_graphs = len(numericals.columns)
-            size = n_graphs*scaling_factor
             # Plot correlation matrix
             corr_data = numericals.corr()
-            fig, ax = plt.subplots(figsize=(size, size))
+            fig, ax = plt.subplots(figsize=(n_graphs*scaling_factor, n_graphs*scaling_factor))
             im = ax.imshow(corr_data, vmin=-1, vmax=1)
             # Show all ticks and label them with the respective list entries
             ax.set_xticks(np.arange(len(corr_data.columns)), labels=corr_data.columns)
@@ -83,20 +82,25 @@ class Workflow:
             ax.set_title('Correlation Matrix', fontsize=20)
             fig.tight_layout()
             # Create colorbar
-            ax.figure.colorbar(im, ax=ax, location='bottom', label='Correlation', shrink=0.7)
+            ax.figure.colorbar(im, ax=ax, orientation='vertical', label='Correlation', shrink=0.7, pad=0.05)
 
             if high_correlation:
                 # Plot scatter of highly correlated variables
                 fig2, ax2 = plt.subplots(nrows=len(high_correlation), ncols=1, figsize=(6*scaling_factor, 4*len(high_correlation)*scaling_factor), constrained_layout=True)
-                for i, corr_pair in enumerate(high_correlation):
-                    ax2[i].scatter(numericals[corr_pair[0]], numericals[corr_pair[1]], c=next(colors)["color"])
-                    ax2[i].set_xlabel(corr_pair[0])
-                    ax2[i].set_ylabel(corr_pair[1]) 
+                if len(high_correlation) > 1:
+                    for i, corr_pair in enumerate(high_correlation):
+                        ax2[i].scatter(numericals[corr_pair[0]], numericals[corr_pair[1]], c=next(colors)["color"])
+                        ax2[i].set_xlabel(corr_pair[0])
+                        ax2[i].set_ylabel(corr_pair[1])
+                else:
+                    ax2.scatter(numericals[high_correlation[0][0]], numericals[high_correlation[0][1]], c=next(colors)["color"])
+                    ax2.set_xlabel(high_correlation[0][0])
+                    ax2.set_ylabel(high_correlation[0][1])
 
                 fig2.suptitle('Highly Correlated Variables')
 
             # Plot distribution histograms
-            fig3, ax3 = plt.subplots(nrows=n_graphs, ncols=1, figsize=(8*scaling_factor, 3*scaling_factor), constrained_layout=True)
+            fig3, ax3 = plt.subplots(nrows=n_graphs, ncols=1, figsize=(8*scaling_factor, 3*n_graphs*scaling_factor), constrained_layout=True)
             
             for i, column_name in enumerate(numericals):
                 ax3[i].hist(numericals[column_name], bins=30, color=next(colors)["color"]) # Draw histogram

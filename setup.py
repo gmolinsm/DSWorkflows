@@ -1,6 +1,6 @@
 from setuptools import setup
 
-VERSION = '0.0.1' 
+VERSION = '0.0.2' 
 DESCRIPTION = 'Data Science Workflows'
 LONG_DESCRIPTION = 'A Python package for encompasing the most typical workflow when Scikit-Learn and Pandas'
 
