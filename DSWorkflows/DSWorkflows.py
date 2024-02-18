@@ -24,9 +24,11 @@ class Workflow:
         self.target_name = target_name
         self.seed = seed
 
-    def EDA(self):
+    def EDA(self, scaling_factor: float = 1.0):
         """
         Performs and exploratory data analysis. Returns the results directly into the interactive console.
+        ## Parameters
+            scaling_factor: Float value for adjusting graph size. (Default: 1.0)
         """
         # Dataset Shape
         print('Data Shape:')
@@ -57,7 +59,7 @@ class Workflow:
         
         if not numericals.empty:
             n_graphs = len(numericals.columns)
-            size = n_graphs*1
+            size = n_graphs*scaling_factor
             # Plot correlation matrix
             corr_data = numericals.corr()
             fig, ax = plt.subplots(figsize=(size, size))
@@ -85,7 +87,7 @@ class Workflow:
 
             if high_correlation:
                 # Plot scatter of highly correlated variables
-                fig2, ax2 = plt.subplots(nrows=len(high_correlation), ncols=1, figsize=(6, 4*len(high_correlation)), constrained_layout=True)
+                fig2, ax2 = plt.subplots(nrows=len(high_correlation), ncols=1, figsize=(6*scaling_factor, 4*len(high_correlation)*scaling_factor), constrained_layout=True)
                 for i, corr_pair in enumerate(high_correlation):
                     ax2[i].scatter(numericals[corr_pair[0]], numericals[corr_pair[1]], c=next(colors)["color"])
                     ax2[i].set_xlabel(corr_pair[0])
@@ -94,7 +96,7 @@ class Workflow:
                 fig2.suptitle('Highly Correlated Variables')
 
             # Plot distribution histograms
-            fig3, ax3 = plt.subplots(nrows=n_graphs, ncols=1, figsize=(8, 3*n_graphs), constrained_layout=True)
+            fig3, ax3 = plt.subplots(nrows=n_graphs, ncols=1, figsize=(8*scaling_factor, 3*scaling_factor), constrained_layout=True)
             
             for i, column_name in enumerate(numericals):
                 ax3[i].hist(numericals[column_name], bins=30, color=next(colors)["color"]) # Draw histogram
@@ -107,7 +109,7 @@ class Workflow:
             fig3.suptitle('Numeric Variable Distributions')
 
         if not categoricals.empty:
-            fig4, ax4 = plt.subplots(nrows=len(categoricals.columns), ncols=1, figsize=(6, 4*len(categoricals.columns)), constrained_layout=True)
+            fig4, ax4 = plt.subplots(nrows=len(categoricals.columns), ncols=1, figsize=(6*scaling_factor, 4*len(categoricals.columns)*scaling_factor), constrained_layout=True)
             for i, ax in enumerate(ax4):
                 # Plot barchart from Pandas with top 10 highest categories
                 categoricals[categoricals.columns[i]].value_counts().iloc[:10].plot.barh(ax=ax, x=categoricals.columns[i], y='Count', rot=0, color=next(colors)["color"])
@@ -145,7 +147,7 @@ class Workflow:
         rus = RandomOverSampler(random_state=self.seed)
         return rus.fit_resample(X, y)
 
-    def evaluate(self, pipelines: list, X, y, test_type: str, n_splits: int = 5, multiclass_avg: str = 'binary'):
+    def evaluate(self, pipelines: list, X, y, test_type: str, n_splits: int = 5, multiclass_avg: str = 'binary', scaling_factor: float = 1.0):
         """
         This function receives the pipelines to be crossvalidated, takes the one with the highest score and applies the appropiate evaluation method
 
@@ -156,6 +158,7 @@ class Workflow:
             test_type: Evaluation method for crossvalidation.
             n_splits: Number of splits for crossvalidation. (Default: 5)
             multiclass_avg: Calculation method for classification metrics. Set to 'micro', 'macro', 'samples', 'weighted' or None in multilabel and 'binary' for binary classification. (Default: binary)
+            scaling_factor: Float value for adjusting graph size. (Default: 1.0)
         """
         classification = [
             'accuracy',
@@ -226,7 +229,7 @@ class Workflow:
             print(f'\nPrinting results for pipeline {highscore[2]}:')
             cm = confusion_matrix(y_test, y_pred)
             disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-            fig, ax = plt.subplots(figsize=(labels*1,labels*1))
+            fig, ax = plt.subplots(figsize=(labels*scaling_factor,labels*scaling_factor))
             disp.plot(ax=ax)
 
             print('Accuracy:', accuracy_score(y_test, y_pred))
