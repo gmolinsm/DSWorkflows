@@ -43,8 +43,12 @@ class Workflow:
         self.dataframe.info()
 
         # Numeric variable analysis
-        print('\nNumeric variable analysis:')
+        print('\nNumerical variable analysis:')
         display(self.dataframe.describe())
+
+        # Numeric variable analysis
+        print('\Categorical variable analysis:')
+        display(self.dataframe.describe(include='object'))
 
         # Get duplicated values
         print('\nDuplicated Values:')
