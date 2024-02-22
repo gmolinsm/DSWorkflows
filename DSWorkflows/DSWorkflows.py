@@ -24,12 +24,16 @@ class Workflow:
         self.target_name = target_name
         self.seed = seed
 
-    def EDA(self, scaling_factor: float = 1.0):
+    def EDA(self, scaling_factor: float = 1.0, graph_limit: int = 10):
         """
         Performs and exploratory data analysis. Returns the results directly into the interactive console.
         ## Parameters
             scaling_factor: Float value for adjusting graph size. (Default: 1.0)
+            graph_limit: Maximum number of graphs to display for each group (scatter, histograms and bar). (Default: 10, Minimum: 2)
         """
+        if graph_limit < 2:
+            graph_limit = 2
+
         # Dataset Shape
         print('Data Shape:')
         display(self.dataframe.shape)
@@ -58,10 +62,9 @@ class Workflow:
         colors = plt.rcParams["axes.prop_cycle"]()
         
         if not numericals.empty:
-            n_graphs = len(numericals.columns)
             # Plot correlation matrix
             corr_data = numericals.corr()
-            fig, ax = plt.subplots(figsize=(n_graphs*scaling_factor, n_graphs*scaling_factor))
+            fig, ax = plt.subplots(figsize=(len(numericals.columns)*scaling_factor, len(numericals.columns)*scaling_factor))
             im = ax.imshow(corr_data, vmin=-1, vmax=1)
             # Show all ticks and label them with the respective list entries
             ax.set_xticks(np.arange(len(corr_data.columns)), labels=corr_data.columns)
@@ -86,12 +89,19 @@ class Workflow:
 
             if high_correlation:
                 # Plot scatter of highly correlated variables
-                fig2, ax2 = plt.subplots(nrows=len(high_correlation), ncols=1, figsize=(6*scaling_factor, 4*len(high_correlation)*scaling_factor), constrained_layout=True)
+                if len(high_correlation) > graph_limit:
+                    row_num = graph_limit
+                else:
+                    row_num = len(high_correlation)
+                fig2, ax2 = plt.subplots(nrows=row_num, ncols=1, figsize=(6*scaling_factor, 4*row_num*scaling_factor), constrained_layout=True)
                 if len(high_correlation) > 1:
                     for i, corr_pair in enumerate(high_correlation):
-                        ax2[i].scatter(numericals[corr_pair[0]], numericals[corr_pair[1]], c=next(colors)["color"])
-                        ax2[i].set_xlabel(corr_pair[0])
-                        ax2[i].set_ylabel(corr_pair[1])
+                        if i < row_num:
+                            ax2[i].scatter(numericals[corr_pair[0]], numericals[corr_pair[1]], c=next(colors)["color"])
+                            ax2[i].set_xlabel(corr_pair[0])
+                            ax2[i].set_ylabel(corr_pair[1])
+                        else:
+                            break
                 else:
                     ax2.scatter(numericals[high_correlation[0][0]], numericals[high_correlation[0][1]], c=next(colors)["color"])
                     ax2.set_xlabel(high_correlation[0][0])
@@ -100,25 +110,39 @@ class Workflow:
                 fig2.suptitle('Highly Correlated Variables')
 
             # Plot distribution histograms
-            fig3, ax3 = plt.subplots(nrows=n_graphs, ncols=1, figsize=(8*scaling_factor, 3*n_graphs*scaling_factor), constrained_layout=True)
+            if len(numericals.columns) > graph_limit:
+                row_num = graph_limit
+            else:
+                row_num = len(numericals.columns)
+            fig3, ax3 = plt.subplots(nrows=row_num, ncols=1, figsize=(8*scaling_factor, 3*row_num*scaling_factor), constrained_layout=True)
             
             for i, column_name in enumerate(numericals):
-                ax3[i].hist(numericals[column_name], bins=30, color=next(colors)["color"]) # Draw histogram
-                m = numericals[column_name].mean() # Calculate mean
-                ax3[i].axvline(x=m, color='red', linestyle='--', linewidth=2, label='Avg') # Draw mean line
-                ax3[i].text(x=m, y=ax3[i].get_ylim()[1]*0.95, s='Mean: '+str(round(m, 2)), color='red', ha='left') # Place text with mean value close to mean line
-                ax3[i].set_xlabel(column_name)
-                ax3[i].set_ylabel('Frequency')
+                if i < row_num:
+                    ax3[i].hist(numericals[column_name], bins=30, color=next(colors)["color"]) # Draw histogram
+                    m = numericals[column_name].mean() # Calculate mean
+                    ax3[i].axvline(x=m, color='red', linestyle='--', linewidth=2, label='Avg') # Draw mean line
+                    ax3[i].text(x=m, y=ax3[i].get_ylim()[1]*0.95, s='Mean: '+str(round(m, 2)), color='red', ha='left') # Place text with mean value close to mean line
+                    ax3[i].set_xlabel(column_name)
+                    ax3[i].set_ylabel('Frequency')
+                else:
+                    break
 
             fig3.suptitle('Numeric Variable Distributions')
 
         if not categoricals.empty:
-            fig4, ax4 = plt.subplots(nrows=len(categoricals.columns), ncols=1, figsize=(6*scaling_factor, 4*len(categoricals.columns)*scaling_factor), constrained_layout=True)
+            if len(categoricals.columns) > graph_limit:
+                row_num = graph_limit
+            else:
+                row_num = len(categoricals.columns)
+            fig4, ax4 = plt.subplots(nrows=row_num, ncols=1, figsize=(6*scaling_factor, 4*row_num*scaling_factor), constrained_layout=True)
             for i, ax in enumerate(ax4):
-                # Plot barchart from Pandas with top 10 highest categories
-                categoricals[categoricals.columns[i]].value_counts().iloc[:10].plot.barh(ax=ax, xlabel='Count', ylabel=categoricals.columns[i], rot=0, color=next(colors)["color"])
+                # Plot barchart from Pandas
+                if i < row_num:
+                    categoricals[categoricals.columns[i]].value_counts().iloc[:row_num].plot.barh(ax=ax, xlabel='Count', ylabel=categoricals.columns[i], rot=0, color=next(colors)["color"])
+                else:
+                    break
 
-            fig4.suptitle('Categorical Variable Distributions (Top 10)')
+            fig4.suptitle('Categorical Variable Distributions')
 
         plt.show()
         
