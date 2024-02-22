@@ -23,6 +23,8 @@ class Workflow:
         self.dataframe = dataframe
         self.target_name = target_name
         self.seed = seed
+        self.best_pipeline = None
+        self.best_score = None
 
     def EDA(self, scaling_factor: float = 1.0, graph_limit: int = 10):
         """
