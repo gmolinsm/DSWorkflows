@@ -245,7 +245,14 @@ class Workflow:
                 highscore[1] = mean
                 highscore[2] = i
         
-        self.pipeline = highscore[0]
+        if not self.best_pipeline or not self.best_score:
+            self.best_pipeline = highscore[0]
+            self.best_score = highscore[1]
+
+        if highscore[1] > self.best_score:
+            self.best_pipeline = highscore[0]
+            self.best_score = highscore[1]
+            
         highscore[0].fit(X_train, y_train)
         y_pred = highscore[0].predict(X_test)
 
