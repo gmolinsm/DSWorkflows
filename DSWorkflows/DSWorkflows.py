@@ -116,7 +116,7 @@ class Workflow:
             fig4, ax4 = plt.subplots(nrows=len(categoricals.columns), ncols=1, figsize=(6*scaling_factor, 4*len(categoricals.columns)*scaling_factor), constrained_layout=True)
             for i, ax in enumerate(ax4):
                 # Plot barchart from Pandas with top 10 highest categories
-                categoricals[categoricals.columns[i]].value_counts().iloc[:10].plot.barh(ax=ax, x=categoricals.columns[i], y='Count', rot=0, color=next(colors)["color"])
+                categoricals[categoricals.columns[i]].value_counts().iloc[:10].plot.barh(ax=ax, xlabel='Count', ylabel=categoricals.columns[i], rot=0, color=next(colors)["color"])
 
             fig4.suptitle('Categorical Variable Distributions (Top 10)')
 
