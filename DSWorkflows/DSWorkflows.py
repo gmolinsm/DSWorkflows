@@ -47,7 +47,7 @@ class Workflow:
         display(self.dataframe.describe())
 
         # Numeric variable analysis
-        print('\Categorical variable analysis:')
+        print('\nCategorical variable analysis:')
         display(self.dataframe.describe(include='object'))
 
         # Get duplicated values
