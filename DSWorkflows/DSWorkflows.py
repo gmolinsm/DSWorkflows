@@ -24,12 +24,13 @@ class Workflow:
         self.best_pipeline = None
         self.best_score = None
 
-    def EDA(self, scaling_factor: float = 1.0, graph_limit: int = 10):
+    def EDA(self, scaling_factor: float = 1.0, graph_limit: int = 10, high_corr: float = 0.75):
         """
         Performs and exploratory data analysis. Returns the results directly into the interactive console.
         ## Parameters
             scaling_factor: Float value for adjusting graph size. (Default: 1.0)
             graph_limit: Maximum number of graphs to display for each group (scatter, histograms and bar). (Default: 10, Minimum: 2)
+            high_corr: Defines the correlation threshold to print out the scatter graphs. (Default: 0.75)
         """
         if graph_limit < 2:
             graph_limit = 2
@@ -83,7 +84,7 @@ class Workflow:
                 for j in range(len(corr_data.columns)):
                     corr = round(corr_data.iloc[i, j], 2)
                     ax.text(j, i, corr, ha='center', va='center', color='w', fontsize=14)
-                    if abs(corr) >= 0.75 and i != j:
+                    if abs(corr) >= high_corr and i != j:
                         if [corr_data.columns[i], corr_data.columns[j]] not in high_correlation:
                             if [corr_data.columns[j], corr_data.columns[i]] not in high_correlation:
                                 high_correlation.append([corr_data.columns[i], corr_data.columns[j]])
