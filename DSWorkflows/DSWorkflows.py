@@ -46,11 +46,11 @@ class Workflow:
         numericals = self.dataframe.select_dtypes(exclude='object')
         categoricals = self.dataframe.select_dtypes(include='object')
 
-        if len(numericals) > 0:
+        if not numericals.empty:
             # Numeric variable analysis
             print('\nNumerical variable analysis:')
             display(self.dataframe.describe())
-        if len(categoricals) > 0:
+        if not categoricals.empty:
             # Numeric variable analysis
             print('\nCategorical variable analysis:')
             display(self.dataframe.describe(include='object'))
