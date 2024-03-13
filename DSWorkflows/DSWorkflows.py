@@ -14,14 +14,12 @@ class Workflow:
 
     ## Parameters
         dataframe: Model data in Pandas format.
-        target_name: Name for the target variable.
         seed: Numeric value for reproducibility. (Default: 100)
     """
-    def __init__(self, dataframe: pd.DataFrame, target_name: str, seed: int = 100):
+    def __init__(self, dataframe: pd.DataFrame, seed: int = 100):
         if not isinstance(dataframe, pd.DataFrame):
             raise ValueError('Input must be a Pandas DataFrame')
         self.dataframe = dataframe
-        self.target_name = target_name
         self.seed = seed
         self.best_pipeline = None
         self.best_score = None
@@ -44,13 +42,18 @@ class Workflow:
         print('General information:')
         self.dataframe.info()
 
-        # Numeric variable analysis
-        print('\nNumerical variable analysis:')
-        display(self.dataframe.describe())
+        # Create plots and figures depending on the type of variable
+        numericals = self.dataframe.select_dtypes(exclude='object')
+        categoricals = self.dataframe.select_dtypes(include='object')
 
-        # Numeric variable analysis
-        print('\nCategorical variable analysis:')
-        display(self.dataframe.describe(include='object'))
+        if len(numericals) > 0:
+            # Numeric variable analysis
+            print('\nNumerical variable analysis:')
+            display(self.dataframe.describe())
+        if len(categoricals) > 0:
+            # Numeric variable analysis
+            print('\nCategorical variable analysis:')
+            display(self.dataframe.describe(include='object'))
 
         # Get duplicated values
         print('\nDuplicated Values:')
@@ -59,10 +62,6 @@ class Workflow:
         # Get null values
         print('\nNull Values:')
         display(self.dataframe.isnull().sum())
-
-        # Create plots depending on the type of variable
-        numericals = self.dataframe.select_dtypes(exclude='object')
-        categoricals = self.dataframe.select_dtypes(include='object')
 
         # Define color scheme
         colors = plt.rcParams["axes.prop_cycle"]()
@@ -152,11 +151,12 @@ class Workflow:
 
         plt.show()
         
-    def get_X_and_y(self, remove_duplicates=False):
+    def get_X_and_y(self, target_name: str, remove_duplicates=False):
         """
         Return model features (X) and target variable (y).
 
         ## Parameters
+            target_name: Name of y in the dataframe.
             remove_duplicates: Return values with duplicates removed. (Default: False)
         """
         if remove_duplicates:
